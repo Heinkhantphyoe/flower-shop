@@ -1,0 +1,60 @@
+# Documentation
+HELP.md
+README.md
+*.md
+
+# Build outputs (already compiled)
+target/
+build/
+!**/src/main/**/target/
+!**/src/test/**/target/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# Maven wrapper jar (we copy this separately in Dockerfile)
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE files - not needed in container
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/
+
+# Git files - not needed in container
+.git/
+.gitignore
+.gitattributes
+
+# Docker files - prevent recursion
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Environment and config files that shouldn't be in container
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
