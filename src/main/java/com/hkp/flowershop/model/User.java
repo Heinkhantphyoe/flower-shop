@@ -2,6 +2,7 @@ package com.hkp.flowershop.model;
 
 import com.hkp.flowershop.enums.Role;
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -28,9 +29,7 @@ public class User {
     private String phoneNumber;
 
     @Enumerated(EnumType.STRING)
-    private Role role = Role.USER;
-
-    private Boolean isActive = true;
+    private Role role;
 
     String address;
 

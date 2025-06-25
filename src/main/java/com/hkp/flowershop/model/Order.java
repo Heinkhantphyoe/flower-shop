@@ -33,6 +33,9 @@ public class Order {
     @Column(nullable = false)
     private String orderAddress;
 
+    private double totalPrice;
+
+
 
 
 }

@@ -3,6 +3,8 @@ package com.hkp.flowershop.controller;
 
 import com.hkp.flowershop.dto.requests.LoginRequest;
 import com.hkp.flowershop.dto.requests.RegisterRequest;
+import com.hkp.flowershop.dto.response.LoginResponse;
+import com.hkp.flowershop.enums.Role;
 import com.hkp.flowershop.model.User;
 import com.hkp.flowershop.service.AuthService;
 import com.hkp.flowershop.service.UserService;
@@ -13,6 +15,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 
 
 @RestController
@@ -50,6 +53,7 @@ public class AuthController {
             }
 
             User user = modelMapper.map(request, User.class);
+            user.setRole(Role.ROLE_USER);
 
             // Register user
             authService.registerUser(user);
@@ -70,107 +74,22 @@ public class AuthController {
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
         try {
 
-            User user = modelMapper.map(loginRequest, User.class);
-            // Authenticate user and get JWT token
-            String  token = authService.verify(user);
+            if (!userService.existsByEmail(loginRequest.getEmail())) {
+                return ResponseUtil.badRequest("No such email.Register with your email");
+            }
 
-            return ResponseUtil.success(token,"Login successful");
+            // Authenticate user and get JWT token
+            LoginResponse response = authService.verify(loginRequest.getEmail(),loginRequest.getPassword());
+
+
+            return ResponseUtil.success(response,"Login successful");
 
         } catch (Exception e) {
-            return ResponseUtil.badRequest(e.getMessage());
+            return ResponseUtil.badRequest("Username or Password incorrect");
         }
     }
-//
-//    /**
-//     * User Logout
-//     * POST /api/auth/logout
-//     */
-//    @PostMapping("/logout")
-//    public ResponseEntity<ApiResponse> logoutUser(HttpServletRequest request) {
-//        try {
-//            // Extract JWT token from request
-//            String token = extractTokenFromRequest(request);
-//
-//            if (token != null) {
-//                // Add token to blacklist (optional)
-//                authService.logoutUser(token);
-//            }
-//
-//            return ResponseEntity.ok(new ApiResponse(true, "User logged out successfully!", null));
-//
-//        } catch (Exception e) {
-//            return ResponseEntity.badRequest()
-//                    .body(new ApiResponse(false, "Logout failed: " + e.getMessage(), null));
-//        }
-//    }
-//
-//    /**
-//     * Refresh JWT Token
-//     * POST /api/auth/refresh-token
-//     */
-//    @PostMapping("/refresh-token")
-//    public ResponseEntity<ApiResponse> refreshToken(HttpServletRequest request) {
-//        try {
-//            String token = extractTokenFromRequest(request);
-//
-//            if (token == null) {
-//                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-//                        .body(new ApiResponse(false, "No token provided!", null));
-//            }
-//
-//            // Generate new token
-//            LoginResponse refreshResponse = authService.refreshToken(token);
-//
-//            return ResponseEntity.ok(new ApiResponse(true,
-//                    "Token refreshed successfully!", refreshResponse));
-//
-//        } catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-//                    .body(new ApiResponse(false, "Token refresh failed: " + e.getMessage(), null));
-//        }
-//    }
-//
-//    /**
-//     * Email Verification
-//     * GET /api/auth/verify-email?token={verificationToken}
-//     */
-//    @GetMapping("/verify-email")
-//    public ResponseEntity<ApiResponse> verifyEmail(@RequestParam("token") String verificationToken) {
-//        try {
-//            boolean isVerified = authService.verifyEmail(verificationToken);
-//
-//            if (isVerified) {
-//                return ResponseEntity.ok(new ApiResponse(true,
-//                        "Email verified successfully! You can now login.", null));
-//            } else {
-//                return ResponseEntity.badRequest()
-//                        .body(new ApiResponse(false, "Invalid or expired verification token!", null));
-//            }
-//
-//        } catch (Exception e) {
-//            return ResponseEntity.badRequest()
-//                    .body(new ApiResponse(false, "Email verification failed: " + e.getMessage(), null));
-//        }
-//    }
-//
-//    /**
-//     * Resend Email Verification
-//     * POST /api/auth/resend-verification
-//     */
-//    @PostMapping("/resend-verification")
-//    public ResponseEntity<ApiResponse> resendVerificationEmail(@RequestParam("email") String email) {
-//        try {
-//            authService.resendVerificationEmail(email);
-//
-//            return ResponseEntity.ok(new ApiResponse(true,
-//                    "Verification email sent successfully!", null));
-//
-//        } catch (Exception e) {
-//            return ResponseEntity.badRequest()
-//                    .body(new ApiResponse(false, "Failed to send verification email: " + e.getMessage(), null));
-//        }
-//    }
-//
+
+
 //    /**
 //     * Forgot Password - Send Reset Email
 //     * POST /api/auth/forgot-password
@@ -253,35 +172,7 @@ public class AuthController {
 //        }
 //    }
 //
-//    /**
-//     * Validate Token
-//     * GET /api/auth/validate-token
-//     */
-//    @GetMapping("/validate-token")
-//    public ResponseEntity<ApiResponse> validateToken(HttpServletRequest request) {
-//        try {
-//            String token = extractTokenFromRequest(request);
-//
-//            if (token == null) {
-//                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-//                        .body(new ApiResponse(false, "No token provided!", null));
-//            }
-//
-//            boolean isValid = authService.validateToken(token);
-//
-//            if (isValid) {
-//                return ResponseEntity.ok(new ApiResponse(true, "Token is valid!", null));
-//            } else {
-//                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-//                        .body(new ApiResponse(false, "Token is invalid or expired!", null));
-//            }
-//
-//        } catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-//                    .body(new ApiResponse(false, "Token validation failed: " + e.getMessage(), null));
-//        }
-//    }
-//
+
 //    /**
 //     * Get Current User Info
 //     * GET /api/auth/me

@@ -1,8 +1,13 @@
 package com.hkp.flowershop.service;
 
+import com.hkp.flowershop.model.User;
+import com.hkp.flowershop.model.UserPrinciple;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -10,30 +15,37 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
 @Service
 public class JWTService {
 
-    private static final String SECRET_KEY = "mySuperSecretKeyThatIsLongEnough1234567890";
 
-    public String generateToken(String email) {
+    @Value("${app.jwt.secret}")
+    private  String SECRET_KEY;
+
+    @Value("${app.jwt.expiration}")
+    private long jwtExpirationMs;
+
+    public String generateToken(UserPrinciple userPrinciple) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("tokenType", "access");
+        claims.put("role", userPrinciple.getRole());
 
         return Jwts.builder()
                 .claims(claims)
-                .subject(email)
+                .subject(userPrinciple.getUsername())
                 .issuer("FlowerShop")
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 1000L * 60 * 60)) // 1 hour
+                .expiration(new Date(System.currentTimeMillis() + jwtExpirationMs)) // 1 hour
                 .signWith(getKey())
                 .compact();
     }
 
     private SecretKey getKey() {
-        byte[] keyBytes = SECRET_KEY.getBytes(StandardCharsets.UTF_8);
+        byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
@@ -59,4 +71,5 @@ public class JWTService {
                 .parseSignedClaims(token)
                 .getPayload();
     }
+
 }
