@@ -1,6 +1,7 @@
 package com.hkp.flowershop.model;
 
 import com.hkp.flowershop.enums.Role;
+import com.hkp.flowershop.enums.UserStatus;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Data;
@@ -43,6 +44,17 @@ public class User {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    private String otpCode;
+
+    private LocalDateTime otpGeneratedAt;
+
+    @Enumerated(EnumType.STRING)
+    private UserStatus status;
+
+    private String resetToken;
+
+    private LocalDateTime resetTokenExpiry;
 
 }
 

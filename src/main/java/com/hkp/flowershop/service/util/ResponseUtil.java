@@ -20,6 +20,12 @@ import java.util.Map;
 @Component
 public class ResponseUtil {
 
+    /**
+     * Create a successful response with custom message
+     */
+    public static <T> ResponseEntity<ApiResponse<T>> success(String message) {
+        return ResponseEntity.ok(ApiResponse.success( message));
+    }
 
     /**
      * Create a successful response with data and custom message

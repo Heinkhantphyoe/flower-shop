@@ -56,13 +56,24 @@ public class ApiResponse<T> {
 
 
     /**
-     * Create a successful response with custom message
+     * Create a successful response with data and custom message
      */
     public static <T> ApiResponse<T> success(T data, String message) {
         return ApiResponse.<T>builder()
                 .success(true)
                 .message(message)
                 .data(data)
+                .status(200)
+                .build();
+    }
+
+    /**
+     * Create a successful response with custom message
+     */
+    public static <T> ApiResponse<T> success(String message) {
+        return ApiResponse.<T>builder()
+                .success(true)
+                .message(message)
                 .status(200)
                 .build();
     }
