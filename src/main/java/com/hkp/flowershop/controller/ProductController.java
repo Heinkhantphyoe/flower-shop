@@ -8,6 +8,7 @@ import com.hkp.flowershop.dto.requests.UpdateProductRequest;
 import com.hkp.flowershop.dto.response.PaginationResponse;
 import com.hkp.flowershop.exceptions.FileStorageException;
 import com.hkp.flowershop.exceptions.ResourceNotFoundException;
+import com.hkp.flowershop.mapper.ProductMapper;
 import com.hkp.flowershop.model.Category;
 import com.hkp.flowershop.model.Product;
 import com.hkp.flowershop.service.CategoryService;
@@ -15,18 +16,13 @@ import com.hkp.flowershop.service.ProductService;
 import com.hkp.flowershop.service.util.ResponseUtil;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
@@ -40,74 +36,61 @@ public class ProductController {
     private ProductService productService;
 
     @Autowired
-    ModelMapper modelMapper;
-
-    @Autowired
     private CategoryService categoryService;
 
+    @Autowired
+    private ProductMapper productMapper;
+
     @GetMapping
-    public ResponseEntity<?> getAllProducts(PaginationRequest paginationRequest, ProductFilterRequest filterRequest) {
+    public ResponseEntity<?> getAllProducts(PaginationRequest paginationRequest, ProductFilterRequest productFilterRequest) {
         try {
             Pageable pageable = paginationRequest.toPageable();
 
-            Page<Product> pagiProducts = productService.getAllProducts(
-                    filterRequest.getName(),
-                    filterRequest.getCategoryId(),
-                    filterRequest.getMinPrice(),
-                    filterRequest.getMaxPrice(),
-                    pageable);
+            Page<Product> pagiProducts = productService.getAllProducts(productFilterRequest, pageable);
 
-            List<ProductDto> productDtos = pagiProducts.stream().map(product -> {
-                ProductDto dto = modelMapper.map(product, ProductDto.class);
-                dto.setCategoryId(product.getCategory().getId());
-                dto.setCategoryName(product.getCategory().getName());
-                return dto;
-            }).toList();
+            List<ProductDto> productDtos = pagiProducts.stream()
+                    .map(productMapper::toDto)
+                    .toList();
+
             PaginationResponse<ProductDto> response = new PaginationResponse<>(productDtos, pagiProducts);
             return ResponseUtil.success(response);
         } catch (Exception e) {
+            log.error("Error while fetching products", e);
             return ResponseUtil.internalError("Internal Server Error");
         }
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<?> createFlower(@Valid @ModelAttribute CreateProductRequest request) {
+    public ResponseEntity<?> createProduct(@Valid @ModelAttribute CreateProductRequest request) {
         try {
-            Optional<Category> result = categoryService.findById(request.getCategoryId());
-            if (result.isEmpty()) {
+            Optional<Category> optionalCategory = categoryService.findById(request.getCategoryId());
+            if (optionalCategory.isEmpty()) {
                 return ResponseUtil.notFound("Category not found");
             }
-            Product product = new Product();
-            product.setName(request.getName());
-            product.setDescription(request.getDescription());
-            product.setPrice(request.getPrice());
-            product.setStock(request.getStock());
-            product.setCategory(result.get());
 
+            Product product = productMapper.fromCreateRequest(request, optionalCategory.get());
             Product createdProduct = productService.createProductWithImage(product, request.getImage());
-            ProductDto productDto = modelMapper.map(createdProduct, ProductDto.class);
-            productDto.setCategoryId(createdProduct.getCategory().getId());
-            productDto.setCategoryName(createdProduct.getCategory().getName());
-            return ResponseUtil.created(productDto, "Created product successfully");
+
+            ProductDto dto = productMapper.toDto(createdProduct);
+            return ResponseUtil.created(dto, "Created product successfully");
         } catch (Exception e) {
-            log.info("Error while creating product");
+            log.error("Error while creating product", e);
             return ResponseUtil.internalError("Internal Server Error");
         }
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getImage(@PathVariable int id) {
+    public ResponseEntity<?> productDetail(@PathVariable int id) {
         try {
             Optional<Product> optionalProduct = productService.findById(id);
-            if (optionalProduct.isPresent()) {
-                Product product = optionalProduct.get();
-                ProductDto productDto = modelMapper.map(product, ProductDto.class);
-                productDto.setCategoryId(product.getCategory().getId());
-                return ResponseUtil.success(productDto);
+            if (optionalProduct.isEmpty()) {
+                return ResponseUtil.notFound("Product not found");
             }
-            return ResponseUtil.notFound("Product not found");
+            ProductDto productDto = productMapper.toDto(optionalProduct.get());
+            return ResponseUtil.success(productDto);
         } catch (Exception e) {
+            log.error("Error while getting product detail", e);
             return ResponseUtil.internalError("Internal Server Error");
         }
     }
@@ -117,10 +100,11 @@ public class ProductController {
     public ResponseEntity<?> deleteProduct(@PathVariable int id) {
         try {
             productService.deleteProduct(id);
-            return ResponseUtil.success("Product deleted successfully with Id" + id);
+            return ResponseUtil.success("Product deleted successfully with Id " + id);
         } catch (ResourceNotFoundException e) {
             return ResponseUtil.notFound(e.getMessage());
         } catch (Exception e) {
+            log.error("Error while deleting product", e);
             return ResponseUtil.internalError("Internal Server Error");
         }
     }
@@ -129,19 +113,18 @@ public class ProductController {
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> updateProduct(
             @PathVariable int id,
-            @ModelAttribute UpdateProductRequest request) throws IOException {
+            @ModelAttribute UpdateProductRequest request) {
         try {
             Product updatedProduct = productService.updateProduct(id, request, request.getImage());
-            ProductDto productDto = modelMapper.map(updatedProduct, ProductDto.class);
+            ProductDto productDto = productMapper.toDto(updatedProduct);
             return ResponseUtil.success(productDto);
         } catch (ResourceNotFoundException e) {
             return ResponseUtil.notFound(e.getMessage());
         } catch (FileStorageException e) {
             return ResponseUtil.badRequest(e.getMessage());
         } catch (Exception e) {
+            log.error("Error while updating product", e);
             return ResponseUtil.internalError("Internal Server Error");
         }
     }
-
-
 }

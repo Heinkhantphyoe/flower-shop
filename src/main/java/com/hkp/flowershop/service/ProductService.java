@@ -1,5 +1,6 @@
 package com.hkp.flowershop.service;
 
+import com.hkp.flowershop.dto.requests.ProductFilterRequest;
 import com.hkp.flowershop.dto.requests.UpdateProductRequest;
 import com.hkp.flowershop.exceptions.FileStorageException;
 import com.hkp.flowershop.exceptions.ResourceNotFoundException;
@@ -97,12 +98,9 @@ public class ProductService {
 
 
     public Page<Product> getAllProducts(
-            String name,
-            Integer categoryId,
-            Integer minPrice,
-            Integer maxPrice,
+            ProductFilterRequest request,
             Pageable pageable) {
-        Specification<Product> spec = ProductSpecification.filterBy(name, categoryId, minPrice, maxPrice);
+        Specification<Product> spec = ProductSpecification.filterBy(request.getName(), request.getCategoryId(), request.getMinPrice(), request.getMaxPrice());
         return productRepo.findAll(spec,pageable);
     }
 

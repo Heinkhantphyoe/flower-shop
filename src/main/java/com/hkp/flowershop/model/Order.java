@@ -2,12 +2,15 @@ package com.hkp.flowershop.model;
 
 import com.hkp.flowershop.enums.OrderStatus;
 import jakarta.persistence.*;
+import lombok.Data;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.ArrayList;
 
 @Entity
 @Table(name = "orders")
+@Data
 public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
