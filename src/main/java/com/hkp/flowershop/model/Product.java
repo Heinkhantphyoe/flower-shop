@@ -1,10 +1,16 @@
 package com.hkp.flowershop.model;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
+
 import java.util.List;
 
 @Entity
 @Table(name = "products")
+@Data
 public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,7 +32,7 @@ public class Product {
     private Category category;
 
     @Column(nullable = false)
-    private String stock;
+    private double stock;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<OrderItem> orderItems;

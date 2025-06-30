@@ -68,6 +68,17 @@ public class ApiResponse<T> {
     }
 
     /**
+     * Create a successful response with data
+     */
+    public static <T> ApiResponse<T> success(T data) {
+        return ApiResponse.<T>builder()
+                .success(true)
+                .data(data)
+                .status(200)
+                .build();
+    }
+
+    /**
      * Create a successful response with custom message
      */
     public static <T> ApiResponse<T> success(String message) {

@@ -3,9 +3,6 @@ package com.hkp.flowershop.controller;
 
 import com.hkp.flowershop.dto.requests.*;
 import com.hkp.flowershop.dto.response.LoginResponse;
-import com.hkp.flowershop.enums.Role;
-import com.hkp.flowershop.enums.UserStatus;
-import com.hkp.flowershop.model.User;
 import com.hkp.flowershop.service.AuthService;
 import com.hkp.flowershop.service.EmailService;
 import com.hkp.flowershop.service.UserService;
@@ -19,19 +16,13 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
-import java.security.SecureRandom;
-import java.time.LocalDateTime;
-import java.util.Optional;
-import java.util.Random;
-
 
 @RestController
 @RequestMapping("/auth")
 @Slf4j
 public class AuthController {
 
-    @Autowired
-    ModelMapper modelMapper;
+
 
     @GetMapping
     public String greeting() {

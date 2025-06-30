@@ -35,6 +35,14 @@ public class ResponseUtil {
     }
 
     /**
+     * Create a successful response with data and custom message
+     */
+    public static <T> ResponseEntity<ApiResponse<T>> success(T data) {
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
+
+
+    /**
      * Create a successful response for created resources with custom message
      */
     public static <T> ResponseEntity<ApiResponse<T>> created(T data, String message) {
