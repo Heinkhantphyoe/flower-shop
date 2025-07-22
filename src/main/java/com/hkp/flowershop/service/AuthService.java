@@ -196,7 +196,7 @@ public class AuthService {
         user.setResetTokenExpiry(LocalDateTime.now().plusMinutes(resetTokenExpiryMinutes));
         userRepo.save(user);
 
-        String resetLink = "https://your-app.com/reset-password?token=" + token;
+        String resetLink = "http://localhost:5173/reset-password?token=" + token;
         String html = "<p>Click the link to reset your password:</p><a href=\"" + resetLink + "\">Reset Password</a>"+ token;
         emailService.sendCustomEmail(user.getEmail(), "Reset Your Password", html);
 
@@ -224,5 +224,18 @@ public class AuthService {
         emailService.sendCustomEmail(user.getEmail(), "Password Reset Successful", html);
 
         return "Password reset successful.";
+    }
+
+    public String verifyResetToken(String token) {
+        Optional<User> optionalUser = userRepo.findByResetToken(token);
+        if (optionalUser.isEmpty()) {
+            throw new BadCredentialsException("Invalid or expired token.");
+        }
+
+        User user = optionalUser.get();
+        if (user.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
+            throw new BadCredentialsException("Invalid or expire expired.");
+        }
+        return "Reset Token is valid";
     }
 }

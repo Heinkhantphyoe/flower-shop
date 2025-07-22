@@ -24,7 +24,7 @@ public class Order {
     private LocalDateTime orderDate = LocalDateTime.now();
 
     @Column(nullable = true)
-    private LocalDateTime deliveryDate = LocalDateTime.now();
+    private LocalDateTime deliveryDate;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)

@@ -9,7 +9,6 @@ import com.hkp.flowershop.service.UserService;
 import com.hkp.flowershop.service.util.ResponseUtil;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -58,6 +57,7 @@ public class AuthController {
 
     @PostMapping("/verify-otp")
     public ResponseEntity<?> verifyOtp(@RequestBody OtpVerificationRequest request) {
+        log.info(request.getEmail()+ request.getOtp());
 
         try {
             String message = authService.verifyOtp(request);
@@ -65,6 +65,7 @@ public class AuthController {
         } catch (BadCredentialsException e) {
             return ResponseUtil.badRequest(e.getMessage());
         } catch (Exception e) {
+            log.error(e.getMessage());
             return ResponseUtil.internalError("Server Error....");
         }
     }
@@ -113,6 +114,20 @@ public class AuthController {
         } catch (UsernameNotFoundException e) {
             return ResponseUtil.badRequest(e.getMessage());
         }catch (Exception e) {
+            return ResponseUtil.internalError("Internal Server Error");
+        }
+
+    }
+
+    @PostMapping("/verify-reset-token")
+    public ResponseEntity<?> verifyResetToken(@Valid @RequestBody VerifyResetToken request) {
+        try {
+            String result = authService.verifyResetToken(request.getToken());
+            return ResponseUtil.success(result);
+        } catch (BadCredentialsException e) {
+            return ResponseUtil.badRequest(e.getMessage());
+        }catch (Exception e) {
+            log.error(e.getMessage());
             return ResponseUtil.internalError("Internal Server Error");
         }
 
