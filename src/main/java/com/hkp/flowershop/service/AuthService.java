@@ -86,9 +86,12 @@ public class AuthService {
         String otp = this.generateOtp();
         User newUser = new User();
         newUser.setEmail(request.getEmail());
-        newUser.setPassword(encoder.encode(request.getPassword())); // encrypt password
+        newUser.setPassword(encoder.encode(request.getPassword()));// encrypt password
+        newUser.setName(request.getName());
         newUser.setRole(Role.ROLE_USER);
         newUser.setStatus(UserStatus.NOT_VERIFIED);
+        newUser.setAddress(request.getAddress());
+        newUser.setPhoneNumber(request.getPhoneNumber());
         newUser.setOtpCode(otp);
         newUser.setOtpGeneratedAt(LocalDateTime.now());
 
