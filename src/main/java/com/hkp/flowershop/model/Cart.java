@@ -1,5 +1,6 @@
 package com.hkp.flowershop.model;
 import jakarta.persistence.*;
+import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -9,6 +10,7 @@ import java.util.ArrayList;
 
 @Entity
 @Table(name = "carts")
+@Data
 public class Cart {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,6 +30,7 @@ public class Cart {
     private User user;
 
     // One cart can have many cart items
-    @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL,orphanRemoval = true, fetch = FetchType.LAZY)
+    @OrderBy("createdAt ASC")
     private List<CartItem> cartItems = new ArrayList<>();
 }

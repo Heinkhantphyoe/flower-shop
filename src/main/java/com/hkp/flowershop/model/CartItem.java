@@ -1,5 +1,6 @@
 package com.hkp.flowershop.model;
 import jakarta.persistence.*;
+import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -9,6 +10,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "cart_items")
+@Data
 public class CartItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
