@@ -1,5 +1,6 @@
 package com.hkp.flowershop.service;
 
+import com.hkp.flowershop.dto.OrderItemsDto;
 import com.hkp.flowershop.dto.requests.CreateOrderRequest;
 import com.hkp.flowershop.enums.OrderStatus;
 import com.hkp.flowershop.exceptions.BadRequestException;
@@ -10,50 +11,59 @@ import com.hkp.flowershop.model.User;
 import com.hkp.flowershop.repository.OrderRepo;
 import com.hkp.flowershop.repository.ProductRepo;
 import com.hkp.flowershop.repository.UserRepo;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class OrderService {
 
-    @Autowired
-    private OrderRepo orderRepo;
+    private final OrderRepo orderRepo;
 
-    @Autowired
-    private ModelMapper modelMapper;
+    private final ModelMapper modelMapper;
 
-    @Autowired
-    private UserRepo userRepo;
+    private final UserRepo userRepo;
 
-    @Autowired
-    private ProductRepo productRepo;
+    private final ProductRepo productRepo;
+
+    private final FileStorageService fileStorageService;
 
 
     public List<Order> getAllOrder() {
         return  orderRepo.findAll();
-
-
     }
 
-    public Order createOrder(CreateOrderRequest request) {
-        User user = userRepo.findById(request.getUserId())
+    @Transactional
+    public Order createOrder(CreateOrderRequest request,String userEmail) {
+        User user = userRepo.findByEmail(userEmail)
                 .orElseThrow(() -> new BadRequestException("User not found"));
 
         Order order = new Order();
+        MultipartFile imageFile = request.getPaymentSs();
+        fileStorageService.validateImageFile(imageFile);
+
+
+        String fileName = fileStorageService.saveImage(imageFile);
+        order.setPaymentSs(fileName);
         order.setUser(user);
         order.setOrderAddress(request.getOrderAddress());
         order.setStatus(OrderStatus.PENDING);
+        order.setCity(request.getCity());
+        order.setZipCode(request.getZipCode());
 
         List<OrderItem> items = new ArrayList<>();
         double total = 0;
 
-        for (CreateOrderRequest.OrderItemDto itemDto : request.getOrderItems()) {
+        for (OrderItemsDto itemDto : request.getOrderItems()) {
             Product product = productRepo.findById(itemDto.getProductId())
                     .orElseThrow(() -> new BadRequestException("Product not found"));
 
@@ -68,7 +78,8 @@ public class OrderService {
         }
 
         order.setItems(items);
-        order.setTotalPrice(total);
+        int shippingFees = 5;
+        order.setTotalPrice(total + shippingFees);
 
         return orderRepo.save(order);
     }

@@ -125,6 +125,7 @@ public class AuthController {
             String result = authService.verifyResetToken(request.getToken());
             return ResponseUtil.success(result);
         } catch (BadCredentialsException e) {
+            log.error(e.getMessage());
             return ResponseUtil.badRequest(e.getMessage());
         }catch (Exception e) {
             log.error(e.getMessage());

@@ -7,10 +7,12 @@ import lombok.Data;
 
 @Data
 public class OrderItemsDto {
+
     private Long productId;
 
     private Integer quantity;
 
-    private Double price;
+    //Price is not require,cause In service,we find with productId,so get price
+    //private Double price;
 
 }

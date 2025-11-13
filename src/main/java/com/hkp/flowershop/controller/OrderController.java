@@ -19,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,9 +47,12 @@ public class OrderController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createOrder(@Valid @RequestBody CreateOrderRequest request) {
+    public ResponseEntity<?> createOrderByCustomer(@ModelAttribute CreateOrderRequest request,
+                                                   Principal principal) {
+
+        log.info("request >>>> {}",request);
         try{
-            Order order = orderService.createOrder(request);
+            Order order = orderService.createOrder(request,principal.getName());
             OrderDto orderDto = orderMapper.toDto(order);
             return ResponseUtil.created(orderDto, "Order created successfully");
         }catch(BadRequestException e){

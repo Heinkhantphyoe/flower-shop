@@ -2,7 +2,10 @@ package com.hkp.flowershop.model;
 
 import com.hkp.flowershop.enums.OrderStatus;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -36,9 +39,12 @@ public class Order {
     @Column(nullable = false)
     private String orderAddress;
 
+    private String city;
+
+    private Integer zipCode;
+
+    private String paymentSs;
+
     private double totalPrice;
-
-
-
 
 }

@@ -222,7 +222,7 @@ public class AuthService {
         user.setResetTokenExpiry(null);
         userRepo.save(user);
 
-        String loginLink = "https://your-app.com/login";
+        String loginLink = "http://localhost:5173/login";
         String html = "<p>Password Reset Succes.Login with new Password:</p><a href=\"" + loginLink + "\">Login</a>";
         emailService.sendCustomEmail(user.getEmail(), "Password Reset Successful", html);
 
@@ -230,8 +230,11 @@ public class AuthService {
     }
 
     public String verifyResetToken(String token) {
+        log.info("token {}",token);
         Optional<User> optionalUser = userRepo.findByResetToken(token);
+
         if (optionalUser.isEmpty()) {
+            log.error("no user found with this token par");
             throw new BadCredentialsException("Invalid or expired token.");
         }
 

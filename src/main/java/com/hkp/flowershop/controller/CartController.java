@@ -36,7 +36,8 @@ public class CartController {
                         item.getProduct().getName(),
                         item.getQuantity(),
                         item.getProduct().getPrice(),
-                        item.getProduct().getImageUrl()
+                        item.getProduct().getImageUrl(),
+                        item.getProduct().getId()
                 ))
                 .toList();
 
@@ -60,7 +61,8 @@ public class CartController {
                         item.getProduct().getName(),
                         item.getQuantity(),
                         item.getProduct().getPrice(),
-                        item.getProduct().getImageUrl()
+                        item.getProduct().getImageUrl(),
+                        item.getProduct().getId()
                 ))
                 .toList();
 
@@ -84,7 +86,8 @@ public class CartController {
                         item.getProduct().getName(),  // assuming relation with Product
                         item.getQuantity(),
                         item.getProduct().getPrice(),
-                        item.getProduct().getImageUrl()
+                        item.getProduct().getImageUrl(),
+                        item.getProduct().getId()
                 ))
                 .toList();
 
