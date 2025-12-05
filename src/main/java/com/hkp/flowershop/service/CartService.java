@@ -1,104 +1,122 @@
 package com.hkp.flowershop.service;
 
+import com.hkp.flowershop.dto.CartDto;
+import com.hkp.flowershop.dto.CartItemsDto;
 import com.hkp.flowershop.model.Cart;
 import com.hkp.flowershop.model.CartItem;
-import com.hkp.flowershop.model.Product;
-import com.hkp.flowershop.model.User;
-import com.hkp.flowershop.repository.CartItemsRepo;
-import com.hkp.flowershop.repository.CartRepo;
-import com.hkp.flowershop.repository.ProductRepo;
-import com.hkp.flowershop.repository.UserRepo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.security.Principal;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class CartService {
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
 
-    private final CartRepo cartRepository;
+    private String getCartKey(String email) {
+        return "cart:" + email;
+    }
 
-    private final CartItemsRepo cartItemRepository;
+    // Get cart from Redis or create new
+    private Cart getCart(String email) {
+        Object obj = redisTemplate.opsForValue().get(getCartKey(email));
+        if (obj != null) {
+            return (Cart) obj;
+        }
+        Cart newCart = new Cart(email, new ArrayList<>());
+        redisTemplate.opsForValue().set(getCartKey(email), newCart);
+        return newCart;
+    }
 
-    private final ProductRepo productRepository;
+    // Convert Cart to CartDto
+    private CartDto mapToDto(Cart cart) {
+        return new CartDto(
+                cart.getCartItems().stream()
+                        .map(ci -> new CartItemsDto(
+                                ci.getName(),
+                                ci.getQuantity(),
+                                ci.getPrice(),
+                                ci.getImageUrl(),
+                                ci.getProductId()
+                                ))
+                        .collect(Collectors.toList())
+        );
+    }
 
-    private final UserRepo userRepository;
+    // Get CartDto
+    public CartDto getCartDto(String email) {
+        Cart cart = getCart(email);
+        return mapToDto(cart);
+    }
 
-    public Cart addToCart(String email, Long productId, int quantity) {
-        Cart cart = getCartByEmail(email);
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+    // Add item to cart
+    public CartDto addToCart(String email, CartItemsDto cartItemDto) {
+        Cart cart = getCart(email);
 
-        CartItem existingItem = cart.getCartItems()
-                .stream()
-                .filter(item -> item.getProduct().getId().equals(productId))
-                .findFirst()
-                .orElse(null);
+        boolean found = false;
+        for (CartItem item : cart.getCartItems()) {
+            if (item.getProductId().equals(cartItemDto.getProductId())) {
+                item.setQuantity(item.getQuantity() + cartItemDto.getQuantity());
+                found = true;
+                break;
+            }
+        }
 
-        if (existingItem != null) {
-            existingItem.setQuantity(existingItem.getQuantity() + quantity);
-        } else {
-            CartItem newItem = new CartItem();
-            newItem.setCart(cart);
-            newItem.setProduct(product);
-            newItem.setQuantity(quantity);
+        if (!found) {
+            CartItem newItem = new CartItem(
+                    cartItemDto.getProductId(),
+                    cartItemDto.getProductName(),
+                    cartItemDto.getQuantity(),
+                    cartItemDto.getPrice(),
+                    cartItemDto.getImageUrl()
+            );
             cart.getCartItems().add(newItem);
         }
 
-        return cartRepository.save(cart);
+        redisTemplate.opsForValue().set(getCartKey(email), cart);
+        return mapToDto(cart);
     }
 
-    public Cart updateCartItem(String email, Long cartItemId, int quantity) {
-        Cart cart = getCartByEmail(email);
-        CartItem item = cartItemRepository.findById(cartItemId)
-                .orElseThrow(() -> new RuntimeException("Cart item not found"));
+    // Update cart item quantity
+    public CartDto updateCartItem(String email, Long productId, int quantity) {
+        Cart cart = getCart(email);
 
-        if (!item.getCart().getId().equals(cart.getId())) {
-            throw new RuntimeException("Item does not belong to this user's cart");
+        if(quantity <= 0){
+            cart.getCartItems().removeIf(item -> item.getProductId().equals(productId));
+        }else{
+            for (CartItem item : cart.getCartItems()) {
+                if (item.getProductId().equals(productId)) {
+                    // Update quantity
+                    item.setQuantity(quantity);
+                    break;
+                }
+            }
         }
 
-        if (quantity <= 0) {
-            cartItemRepository.delete(item);
-            return cart;
-        }
-
-        item.setQuantity(quantity);
-        cartItemRepository.save(item);
-
-        return cart;
+        redisTemplate.opsForValue().set(getCartKey(email), cart);
+        return mapToDto(cart);
     }
 
-    public void removeCartItem(String email, Long cartItemId) {
-        Cart cart = getCartByEmail(email);
-        CartItem item = cartItemRepository.findById(cartItemId)
-                .orElseThrow(() -> new RuntimeException("Cart item not found"));
 
-        if (!item.getCart().getId().equals(cart.getId())) {
-            throw new RuntimeException("Item does not belong to this user's cart");
-        }
-
-        cartItemRepository.delete(item);
+    // Remove item from cart
+    public CartDto removeFromCart(String email, Long productId) {
+        Cart cart = getCart(email);
+        cart.getCartItems().removeIf(item -> item.getProductId().equals(productId));
+        redisTemplate.opsForValue().set(getCartKey(email), cart);
+        return mapToDto(cart);
     }
 
-    public void clearCart(String email) {
-        Cart cart = getCartByEmail(email);
-        cart.getCartItems().clear();
-        cartRepository.save(cart);
+    // Clear cart
+    public CartDto clearCart(String email) {
+        redisTemplate.delete(getCartKey(email));
+        return new CartDto( new ArrayList<>());
     }
 
-    public Cart getCartByEmail(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        return cartRepository.findByUser(user)
-                .orElseGet(() -> {
-                    Cart newCart = new Cart();
-                    newCart.setUser(user);
-                    return cartRepository.save(newCart);
-                });
-
-    }
 }

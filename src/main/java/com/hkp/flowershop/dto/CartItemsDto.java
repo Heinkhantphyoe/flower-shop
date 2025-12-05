@@ -9,7 +9,6 @@ import java.util.List;
 @AllArgsConstructor
 public class CartItemsDto {
 
-    private Long id;
     private String productName;
     private int quantity;
     private double price;

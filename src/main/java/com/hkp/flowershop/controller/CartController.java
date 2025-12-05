@@ -2,21 +2,12 @@ package com.hkp.flowershop.controller;
 
 import com.hkp.flowershop.dto.CartDto;
 import com.hkp.flowershop.dto.CartItemsDto;
-import com.hkp.flowershop.dto.OrderDto;
-import com.hkp.flowershop.dto.requests.CreateOrderRequest;
-import com.hkp.flowershop.exceptions.BadRequestException;
-import com.hkp.flowershop.model.Cart;
-import com.hkp.flowershop.model.Order;
 import com.hkp.flowershop.service.CartService;
-import com.hkp.flowershop.service.util.ResponseUtil;
-import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
-import java.util.List;
 
 @Slf4j
 @RestController
@@ -24,93 +15,39 @@ import java.util.List;
 public class CartController {
 
     @Autowired
-    CartService cartService;
+    private CartService cartService;
 
-    @GetMapping()
-    public ResponseEntity<CartDto> getCart(Principal principal) {
-        Cart cart = cartService.getCartByEmail(principal.getName());
-
-        List<CartItemsDto> items = cart.getCartItems().stream()
-                .map(item -> new CartItemsDto(
-                        item.getId(),
-                        item.getProduct().getName(),
-                        item.getQuantity(),
-                        item.getProduct().getPrice(),
-                        item.getProduct().getImageUrl(),
-                        item.getProduct().getId()
-                ))
-                .toList();
-
-        CartDto response = new CartDto(
-                cart.getId(),
-                cart.getUser().getId(),
-                items
-        );
-
-        return ResponseEntity.ok(response);
+    // Get cart
+    @GetMapping
+    public CartDto getCart(Principal principal) {
+        return cartService.getCartDto(principal.getName());
     }
 
+    // Add item
     @PostMapping("/add")
-    public ResponseEntity<CartDto> addToCart(Principal principal,
-                                          @RequestParam Long productId,
-                                          @RequestParam int quantity) {
-        Cart cart = cartService.addToCart(principal.getName(), productId, quantity);
-        List<CartItemsDto> items = cart.getCartItems().stream()
-                .map(item -> new CartItemsDto(
-                        item.getId(),
-                        item.getProduct().getName(),
-                        item.getQuantity(),
-                        item.getProduct().getPrice(),
-                        item.getProduct().getImageUrl(),
-                        item.getProduct().getId()
-                ))
-                .toList();
-
-        CartDto response = new CartDto(
-                cart.getId(),
-                cart.getUser().getId(),
-                items
-        );
-
-        return ResponseEntity.ok(response);
+    public CartDto addToCart(Principal principal, @RequestBody CartItemsDto cartItemDto) {
+        return cartService.addToCart(principal.getName(), cartItemDto);
     }
 
+    // Update quantity
     @PutMapping("/update")
-    public ResponseEntity<CartDto> updateCartItem(Principal principal,
-                                               @RequestParam Long cartItemId,
-                                               @RequestParam int quantity) {
-        Cart cart = cartService.updateCartItem(principal.getName(), cartItemId, quantity);
-        List<CartItemsDto> items = cart.getCartItems().stream()
-                .map(item -> new CartItemsDto(
-                        item.getId(),
-                        item.getProduct().getName(),  // assuming relation with Product
-                        item.getQuantity(),
-                        item.getProduct().getPrice(),
-                        item.getProduct().getImageUrl(),
-                        item.getProduct().getId()
-                ))
-                .toList();
-
-        CartDto response = new CartDto(
-                cart.getId(),
-                cart.getUser().getId(),
-                items
-        );
-
-        return ResponseEntity.ok(response);
+    public CartDto updateCartItem(Principal principal,
+                                  @RequestParam Long productId,
+                                  @RequestParam int quantity) {
+        return cartService.updateCartItem(principal.getName(), productId, quantity);
     }
 
-    @DeleteMapping("/remove")
-    public ResponseEntity<?> removeCartItem(Principal principal,
-                                                 @RequestParam Long cartItemId) {
-        cartService.removeCartItem(principal.getName(), cartItemId);
-        return ResponseEntity.noContent().build();
+
+    // Remove item
+    @DeleteMapping("/remove/{productId}")
+    public CartDto removeFromCart(Principal principal, @PathVariable Long productId) {
+        return cartService.removeFromCart(principal.getName(), productId);
     }
 
+    // Clear cart
     @DeleteMapping("/clear")
-    public ResponseEntity<String> clearCart(Principal principal) {
-        cartService.clearCart(principal.getName());
-        return ResponseEntity.ok("Cart cleared");
+    public CartDto clearCart(Principal principal) {
+        return cartService.clearCart(principal.getName());
     }
 
 }
