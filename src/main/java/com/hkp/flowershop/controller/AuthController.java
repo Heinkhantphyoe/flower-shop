@@ -3,8 +3,11 @@ package com.hkp.flowershop.controller;
 
 import com.hkp.flowershop.dto.requests.*;
 import com.hkp.flowershop.dto.response.LoginResponse;
+import com.hkp.flowershop.model.User;
+import com.hkp.flowershop.model.UserPrinciple;
 import com.hkp.flowershop.service.AuthService;
 import com.hkp.flowershop.service.EmailService;
+import com.hkp.flowershop.service.RefreshTokenService;
 import com.hkp.flowershop.service.UserService;
 import com.hkp.flowershop.service.util.ResponseUtil;
 import jakarta.validation.Valid;
@@ -12,6 +15,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,6 +41,9 @@ public class AuthController {
 
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private RefreshTokenService refreshTokenService;
 
 
     /**
@@ -145,6 +153,65 @@ public class AuthController {
             return ResponseUtil.internalError("Internal Server Error");
         }
 
+    }
+
+    /**
+     * Refresh Token
+     * POST /auth/refresh
+     */
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
+        try {
+            // Verify and rotate the refresh token
+            com.hkp.flowershop.model.RefreshToken newRefreshToken = 
+                refreshTokenService.rotateRefreshToken(request.getRefreshToken());
+            
+            // Generate new access token
+            User user = newRefreshToken.getUser();
+            UserPrinciple userPrinciple = new UserPrinciple(user);
+            String newAccessToken = authService.jwtService.generateToken(userPrinciple);
+            
+            // Build response with both new tokens
+            LoginResponse response = LoginResponse.builder()
+                    .accessToken(newAccessToken)
+                    .refreshToken(newRefreshToken.getToken())
+                    .role(user.getRole().name())
+                    .build();
+            
+            return ResponseUtil.success(response, "Token refreshed successfully");
+        } catch (BadCredentialsException e) {
+            return ResponseUtil.badRequest(e.getMessage());
+        } catch (Exception e) {
+            log.error("Error refreshing token", e);
+            return ResponseUtil.internalError("Internal Server Error");
+        }
+    }
+
+    /**
+     * Logout (revoke refresh tokens)
+     * POST /auth/logout
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout() {
+        try {
+            // Get authenticated user from security context
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseUtil.badRequest("Not authenticated");
+            }
+            
+            String email = authentication.getName();
+            User user = userService.getUserByEmail(email);
+            
+            // Revoke all refresh tokens for this user
+            refreshTokenService.revokeUserTokens(user);
+            
+            return ResponseUtil.success("Logged out successfully");
+        } catch (Exception e) {
+            log.error("Error during logout", e);
+            return ResponseUtil.internalError("Internal Server Error");
+        }
     }
 
 }

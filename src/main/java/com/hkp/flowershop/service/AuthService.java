@@ -42,7 +42,10 @@ public class AuthService {
     AuthenticationManager authenticationManager;
 
     @Autowired
-    JWTService jwtService;
+    public JWTService jwtService;
+
+    @Autowired
+    RefreshTokenService refreshTokenService;
 
     BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
     @Autowired
@@ -122,10 +125,16 @@ public class AuthService {
         UserPrinciple userPrinciple = (UserPrinciple) authentication.getPrincipal();
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        String jwtToken = jwtService.generateToken(userPrinciple);
+        // Generate access token
+        String accessToken = jwtService.generateToken(userPrinciple);
+        
+        // Generate and save refresh token
+        String refreshToken = refreshTokenService.createRefreshToken(user).getToken();
+
         return LoginResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
                 .role(userPrinciple.getRole().name())
-                .token(jwtToken)
                 .build();
     }
 

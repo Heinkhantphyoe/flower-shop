@@ -23,4 +23,9 @@ public class UserService {
     public Optional<User> findyByEmail(String email) {
         return userRepo.findByEmail(email);
     }
+
+    public User getUserByEmail(String email) {
+        return userRepo.findByEmail(email)
+                .orElseThrow(() -> new org.springframework.security.core.userdetails.UsernameNotFoundException("User not found"));
+    }
 }

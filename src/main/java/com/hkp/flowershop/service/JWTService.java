@@ -72,4 +72,8 @@ public class JWTService {
                 .getPayload();
     }
 
+    public String generateRefreshToken() {
+        return java.util.UUID.randomUUID().toString();
+    }
+
 }
