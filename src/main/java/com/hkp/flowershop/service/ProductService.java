@@ -1,5 +1,6 @@
 package com.hkp.flowershop.service;
 
+import com.hkp.flowershop.config.StockConfig;
 import com.hkp.flowershop.dto.requests.ProductFilterRequest;
 import com.hkp.flowershop.dto.requests.UpdateProductRequest;
 import com.hkp.flowershop.exceptions.FileStorageException;
@@ -30,6 +31,7 @@ public class ProductService {
     private final ProductRepo productRepo;
     private final CategoryRepo categoryRepo;
     private final FileStorageService fileStorageService;
+    private final StockConfig stockConfig;
 
     @Transactional
     public Product createProductWithImage(Product product, MultipartFile imageFile) throws IOException {
@@ -50,7 +52,14 @@ public class ProductService {
     public Page<Product> getAllProducts(
             ProductFilterRequest request,
             Pageable pageable) {
-        Specification<Product> spec = ProductSpecification.filterBy(request.getName(), request.getCategoryId(), request.getMinPrice(), request.getMaxPrice());
+        Specification<Product> spec = ProductSpecification.filterBy(
+                request.getName(), 
+                request.getCategoryId(), 
+                request.getMinPrice(), 
+                request.getMaxPrice(),
+                request.getStockFilterId(),
+                stockConfig.getLowStockThreshold()
+        );
         return productRepo.findAll(spec,pageable);
     }
 

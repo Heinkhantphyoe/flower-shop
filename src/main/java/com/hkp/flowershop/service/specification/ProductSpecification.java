@@ -11,7 +11,9 @@ public class ProductSpecification {
             String name,
             Integer categoryId,
             Integer minPrice,
-            Integer maxPrice
+            Integer maxPrice,
+            Integer stockFilterId,
+            double lowStockThreshold
     ) {
         return (Root<Product> root, CriteriaQuery<?> query, CriteriaBuilder cb) -> {
             Predicate predicate = cb.conjunction(); // always true base
@@ -34,6 +36,27 @@ public class ProductSpecification {
             if (maxPrice != null) {
                 predicate = cb.and(predicate,
                         cb.lessThanOrEqualTo(root.get("price"), maxPrice));
+            }
+
+            // Stock filtering based on stockFilterId
+            if (stockFilterId != null) {
+                switch (stockFilterId) {
+                    case 1: // InStock - stock > lowStockThreshold
+                        predicate = cb.and(predicate,
+                                cb.greaterThan(root.get("stock"), lowStockThreshold));
+                        break;
+                    case 2: // LowStock - 0 < stock <= lowStockThreshold
+                        predicate = cb.and(predicate,
+                                cb.and(
+                                        cb.greaterThan(root.get("stock"), 0),
+                                        cb.lessThanOrEqualTo(root.get("stock"), lowStockThreshold)
+                                ));
+                        break;
+                    case 3: // OutOfStock - stock = 0
+                        predicate = cb.and(predicate,
+                                cb.equal(root.get("stock"), 0));
+                        break;
+                }
             }
 
             return predicate;
