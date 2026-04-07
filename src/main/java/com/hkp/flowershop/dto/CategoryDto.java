@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 public class CategoryDto {
     private Long id;
     private String name;
+    private Integer productCount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

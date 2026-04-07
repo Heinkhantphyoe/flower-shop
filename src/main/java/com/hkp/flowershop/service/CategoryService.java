@@ -29,6 +29,10 @@ public class CategoryService {
     public Optional<Category> findById(int categoryId) {
         return categoryRepo.findById(categoryId);
     }
+    
+    public Long getProductCountByCategoryId(Long categoryId) {
+        return categoryRepo.countProductsByCategoryId(categoryId);
+    }
 
     public Category createCategory(Category category) {
         return categoryRepo.save(category);

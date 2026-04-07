@@ -6,6 +6,7 @@ import com.hkp.flowershop.dto.requests.PaginationRequest;
 import com.hkp.flowershop.dto.requests.UpdateCategoryRequest;
 import com.hkp.flowershop.dto.response.PaginationResponse;
 import com.hkp.flowershop.exceptions.ResourceNotFoundException;
+import com.hkp.flowershop.mapper.CategoryMapper;
 import com.hkp.flowershop.model.Category;
 import com.hkp.flowershop.service.CategoryService;
 import com.hkp.flowershop.service.util.ResponseUtil;
@@ -31,6 +32,9 @@ public class CategoryController {
     private CategoryService categoryService;
 
     @Autowired
+    private CategoryMapper categoryMapper;
+
+    @Autowired
     private ModelMapper modelMapper;
 
     @GetMapping
@@ -40,7 +44,7 @@ public class CategoryController {
             Page<Category> pagiCategories = categoryService.getAllCategories(pageable);
 
             List<CategoryDto> categoryDtos = pagiCategories.stream()
-                    .map(category -> modelMapper.map(category, CategoryDto.class))
+                    .map(category -> categoryMapper.toDto(category))
                     .toList();
 
             PaginationResponse<CategoryDto> response = new PaginationResponse<>(categoryDtos, pagiCategories);
@@ -58,7 +62,7 @@ public class CategoryController {
             if (optionalCategory.isEmpty()) {
                 return ResponseUtil.notFound("Category not found");
             }
-            CategoryDto categoryDto = modelMapper.map(optionalCategory.get(), CategoryDto.class);
+            CategoryDto categoryDto = categoryMapper.toDto(optionalCategory.get());
             return ResponseUtil.success(categoryDto);
         } catch (Exception e) {
             log.error("Error while getting category detail", e);
@@ -77,7 +81,7 @@ public class CategoryController {
             Category category = modelMapper.map(request, Category.class);
             Category createdCategory = categoryService.createCategory(category);
 
-            CategoryDto categoryDto = modelMapper.map(createdCategory, CategoryDto.class);
+            CategoryDto categoryDto = categoryMapper.toDto(createdCategory);
             return ResponseUtil.created(categoryDto, "Category created successfully");
         } catch (Exception e) {
             log.error("Error while creating category", e);
@@ -104,7 +108,7 @@ public class CategoryController {
             Category categoryDetails = modelMapper.map(request, Category.class);
             Category updatedCategory = categoryService.updateCategory(id, categoryDetails);
 
-            CategoryDto categoryDto = modelMapper.map(updatedCategory, CategoryDto.class);
+            CategoryDto categoryDto = categoryMapper.toDto(updatedCategory);
             return ResponseUtil.success(categoryDto, "Category updated successfully");
         } catch (ResourceNotFoundException e) {
             return ResponseUtil.notFound(e.getMessage());
