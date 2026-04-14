@@ -29,6 +29,8 @@ public class User {
 
     private String phoneNumber;
 
+    private String profileImageUrl;
+
     @Enumerated(EnumType.STRING)
     private Role role;
 
