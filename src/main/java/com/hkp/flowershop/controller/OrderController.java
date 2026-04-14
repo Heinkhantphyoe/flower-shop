@@ -2,25 +2,26 @@ package com.hkp.flowershop.controller;
 
 
 import com.hkp.flowershop.dto.OrderDto;
-import com.hkp.flowershop.dto.OrderItemsDto;
-import com.hkp.flowershop.dto.ProductDto;
 import com.hkp.flowershop.dto.requests.CreateOrderRequest;
+import com.hkp.flowershop.dto.requests.PaginationRequest;
+import com.hkp.flowershop.dto.requests.UpdateOrderStatusRequest;
+import com.hkp.flowershop.dto.response.PaginationResponse;
 import com.hkp.flowershop.exceptions.BadRequestException;
+import com.hkp.flowershop.exceptions.ResourceNotFoundException;
 import com.hkp.flowershop.mapper.OrderMapper;
 import com.hkp.flowershop.model.Order;
-import com.hkp.flowershop.model.OrderItem;
 import com.hkp.flowershop.service.OrderService;
 import com.hkp.flowershop.service.util.ResponseUtil;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -36,11 +37,20 @@ public class OrderController {
 
     @GetMapping
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<?> getAllOrders() {
+    public ResponseEntity<?> getAllOrders(PaginationRequest paginationRequest,
+                                          @RequestParam(required = false) Integer orderStatus) {
         try{
-            List<Order> orders = orderService.getAllOrder();
-            List<OrderDto> orderDtos = orderMapper.toDtoList(orders);
-            return ResponseUtil.success(orderDtos);
+            Pageable pageable = paginationRequest.toPageable();
+            Page<Order> pageOrders = orderService.getAllOrder(pageable, orderStatus);
+
+            List<OrderDto> orderDtos = pageOrders.stream()
+                    .map(orderMapper::toDto)
+                    .toList();
+
+            PaginationResponse<OrderDto> response = new PaginationResponse<>(orderDtos, pageOrders);
+            return ResponseUtil.success(response);
+        }catch(BadRequestException e){
+            return ResponseUtil.badRequest(e.getMessage());
         }catch(Exception e){
             return ResponseUtil.internalError("Internal Server Error");
         }
@@ -58,6 +68,24 @@ public class OrderController {
         }catch(BadRequestException e){
             return ResponseUtil.badRequest(e.getMessage());
         }catch(Exception e){
+            return ResponseUtil.internalError("Internal Server Error");
+        }
+    }
+
+
+    @PutMapping("/{id}/status")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<?> updateOrderStatus(@PathVariable Long id,
+                                               @Valid @RequestBody UpdateOrderStatusRequest request) {
+        try {
+            Order updatedOrder = orderService.updateOrderStatus(id, request.getOrderStatus());
+            OrderDto orderDto = orderMapper.toDto(updatedOrder);
+            return ResponseUtil.success(orderDto, "Order status updated successfully");
+        } catch (ResourceNotFoundException e) {
+            return ResponseUtil.notFound(e.getMessage());
+        } catch (BadRequestException e) {
+            return ResponseUtil.badRequest(e.getMessage());
+        } catch (Exception e) {
             return ResponseUtil.internalError("Internal Server Error");
         }
     }

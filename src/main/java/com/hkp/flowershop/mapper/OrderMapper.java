@@ -29,7 +29,13 @@ public class OrderMapper {
     }
 
     private OrderItemsDto toItemDto(OrderItem item) {
-        return modelMapper.map(item, OrderItemsDto.class);
+        OrderItemsDto dto = new OrderItemsDto();
+        dto.setProductId(item.getProduct().getId());
+        dto.setProductName(item.getProduct().getName());
+        dto.setProductImageUrl(item.getProduct().getImageUrl());
+        dto.setQuantity(item.getQuantity());
+        dto.setPrice(item.getPrice());
+        return dto;
     }
 
     public List<OrderDto> toDtoList(List<Order> orders) {

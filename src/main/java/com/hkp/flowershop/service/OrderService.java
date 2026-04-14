@@ -4,6 +4,7 @@ import com.hkp.flowershop.dto.OrderItemsDto;
 import com.hkp.flowershop.dto.requests.CreateOrderRequest;
 import com.hkp.flowershop.enums.OrderStatus;
 import com.hkp.flowershop.exceptions.BadRequestException;
+import com.hkp.flowershop.exceptions.ResourceNotFoundException;
 import com.hkp.flowershop.model.Order;
 import com.hkp.flowershop.model.OrderItem;
 import com.hkp.flowershop.model.Product;
@@ -16,9 +17,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,9 +41,17 @@ public class OrderService {
 
     private final FileStorageService fileStorageService;
 
+    public Page<Order> getAllOrder(Pageable pageable, Integer orderStatus) {
+        if (orderStatus == null) {
+            return orderRepo.findAll(pageable);
+        }
 
-    public List<Order> getAllOrder() {
-        return  orderRepo.findAll();
+        try {
+            OrderStatus status = OrderStatus.fromCode(orderStatus);
+            return orderRepo.findByStatus(status, pageable);
+        } catch (IllegalArgumentException ex) {
+            throw new BadRequestException("Invalid orderStatus. Use: 0=PENDING, 1=CONFIRMED, 2=DELIVERED, 3=CANCELLED");
+        }
     }
 
     @Transactional
@@ -80,6 +92,34 @@ public class OrderService {
         order.setItems(items);
         int shippingFees = 5;
         order.setTotalPrice(total + shippingFees);
+
+        return orderRepo.save(order);
+    }
+
+    @Transactional
+    public Order updateOrderStatus(Long orderId, Integer orderStatusCode) {
+        if (orderStatusCode == null) {
+            throw new BadRequestException("orderStatus is required");
+        }
+
+        Order order = orderRepo.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+
+        OrderStatus status;
+        try {
+            status = OrderStatus.fromCode(orderStatusCode);
+        } catch (IllegalArgumentException ex) {
+            throw new BadRequestException("Invalid orderStatus. Use: 0=PENDING, 1=CONFIRMED, 2=DELIVERED, 3=CANCELLED");
+        }
+
+        order.setStatus(status);
+        if (status == OrderStatus.DELIVERED) {
+            if (order.getDeliveryDate() == null) {
+                order.setDeliveryDate(LocalDateTime.now());
+            }
+        } else {
+            order.setDeliveryDate(null);
+        }
 
         return orderRepo.save(order);
     }

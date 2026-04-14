@@ -10,9 +10,12 @@ public class OrderItemsDto {
 
     private Long productId;
 
+    private String productName;
+
+    private String productImageUrl;
+
     private Integer quantity;
 
-    //Price is not require,cause In service,we find with productId,so get price
-    //private Double price;
+    private Double price;
 
 }
