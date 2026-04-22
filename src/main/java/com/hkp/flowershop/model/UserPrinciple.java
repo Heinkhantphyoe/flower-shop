@@ -57,4 +57,12 @@ public class UserPrinciple implements UserDetails {
     public Role getRole() {
         return user.getRole();
     }
+
+    public Long getId() {
+        return user.getId();
+    }
+
+    public String getEmail() {
+        return user.getEmail();
+    }
 }
