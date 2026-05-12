@@ -24,6 +24,8 @@ public class AnalyticsSummaryDto {
     private List<BestSellingProductDto> bestSellingProducts;
     private List<LowStockProductDto> lowStockProducts;
     private List<RecentOrderDto> recentOrders;
+    private List<SalesOverviewDto> salesOverview;
+    private List<OrderStatusDto> orderStatus;
 
     @Data
     @Builder
@@ -59,5 +61,24 @@ public class AnalyticsSummaryDto {
         private OrderStatus status;
         private double totalPrice;
         private Long totalItems;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class SalesOverviewDto {
+        private String label;
+        private double revenue;
+        private long orders;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class OrderStatusDto {
+        private String name;
+        private double value;
     }
 }

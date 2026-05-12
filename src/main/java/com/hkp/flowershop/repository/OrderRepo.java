@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Repository
 public interface OrderRepo extends JpaRepository<Order, Long> {
@@ -20,6 +21,16 @@ public interface OrderRepo extends JpaRepository<Order, Long> {
 
 	@Query("SELECT COUNT(o) FROM Order o WHERE o.orderDate >= :start AND o.orderDate < :end")
 	Long countByOrderDateBetween(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+	@Query("""
+			SELECT o.orderDate as orderDate, o.totalPrice as totalPrice
+			FROM Order o
+			WHERE o.orderDate >= :start AND o.orderDate < :end
+			""")
+	List<OrderSalesProjection> findOrderSalesBetween(
+			@Param("start") LocalDateTime start,
+			@Param("end") LocalDateTime end
+	);
 
 	@Query("""
 			SELECT p.id as productId, p.name as productName, p.imageUrl as imageUrl, COALESCE(SUM(oi.quantity), 0) as totalSold
@@ -46,6 +57,17 @@ public interface OrderRepo extends JpaRepository<Order, Long> {
 			""")
 	Page<RecentOrderProjection> findRecentOrders(Pageable pageable);
 
+	@Query("""
+			SELECT o.status as status, COUNT(o) as total
+			FROM Order o
+			WHERE o.orderDate >= :start AND o.orderDate < :end
+			GROUP BY o.status
+			""")
+	List<OrderStatusCountProjection> countByStatusBetween(
+			@Param("start") LocalDateTime start,
+			@Param("end") LocalDateTime end
+	);
+
 	interface BestSellingProductProjection {
 		Long getProductId();
 		String getProductName();
@@ -60,5 +82,15 @@ public interface OrderRepo extends JpaRepository<Order, Long> {
 		OrderStatus getStatus();
 		Double getTotalPrice();
 		Long getTotalItems();
+	}
+
+	interface OrderSalesProjection {
+		LocalDateTime getOrderDate();
+		Double getTotalPrice();
+	}
+
+	interface OrderStatusCountProjection {
+		OrderStatus getStatus();
+		Long getTotal();
 	}
 }
