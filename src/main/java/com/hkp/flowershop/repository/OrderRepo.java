@@ -68,6 +68,17 @@ public interface OrderRepo extends JpaRepository<Order, Long> {
 			@Param("end") LocalDateTime end
 	);
 
+	@Query("""
+			SELECT o.id as orderId, o.orderDate as orderDate, o.totalPrice as totalPrice, o.status as status
+			FROM Order o
+			WHERE o.user.id = :userId
+			ORDER BY o.orderDate DESC
+			""")
+	Page<CustomerRecentOrderProjection> findRecentOrdersByUserId(
+			@Param("userId") Long userId,
+			Pageable pageable
+	);
+
 	interface BestSellingProductProjection {
 		Long getProductId();
 		String getProductName();
@@ -92,5 +103,12 @@ public interface OrderRepo extends JpaRepository<Order, Long> {
 	interface OrderStatusCountProjection {
 		OrderStatus getStatus();
 		Long getTotal();
+	}
+
+	interface CustomerRecentOrderProjection {
+		Long getOrderId();
+		LocalDateTime getOrderDate();
+		Double getTotalPrice();
+		OrderStatus getStatus();
 	}
 }

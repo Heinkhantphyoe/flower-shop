@@ -1,13 +1,18 @@
 package com.hkp.flowershop.service;
 
 import com.hkp.flowershop.config.StockConfig;
+import com.hkp.flowershop.dto.AdminCustomerDto;
 import com.hkp.flowershop.dto.AnalyticsSummaryDto;
 import com.hkp.flowershop.enums.OrderStatus;
+import com.hkp.flowershop.enums.Role;
 import com.hkp.flowershop.model.Product;
 import com.hkp.flowershop.repository.OrderRepo;
 import com.hkp.flowershop.repository.ProductRepo;
+import com.hkp.flowershop.repository.UserRepo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +34,35 @@ public class AnalyticsService {
     private final OrderRepo orderRepo;
     private final ProductRepo productRepo;
     private final StockConfig stockConfig;
+    private final UserRepo userRepo;
+
+    public Page<AdminCustomerDto> getCustomers(String keyword, Pageable pageable) {
+        return userRepo.findCustomersForAdmin(Role.ROLE_USER, keyword, pageable)
+                .map(customer -> AdminCustomerDto.builder()
+                        .customerId(customer.getCustomerId())
+                        .name(customer.getName())
+                        .email(customer.getEmail())
+                        .phoneNumber(customer.getPhoneNumber())
+                        .profileImageUrl(customer.getProfileImageUrl())
+                        .status(customer.getStatus())
+                        .registeredAt(customer.getRegisteredAt())
+                        .totalOrders(customer.getTotalOrders() == null ? 0L : customer.getTotalOrders())
+                        .totalSpent(customer.getTotalSpent() == null ? 0 : customer.getTotalSpent())
+                        .recentOrders(getRecentOrders(customer.getCustomerId()))
+                        .build());
+    }
+
+    private List<AdminCustomerDto.RecentOrderDto> getRecentOrders(Long customerId) {
+        return orderRepo.findRecentOrdersByUserId(customerId, PageRequest.of(0, 3))
+                .stream()
+                .map(order -> AdminCustomerDto.RecentOrderDto.builder()
+                        .id("#" + order.getOrderId())
+                        .date(order.getOrderDate().toLocalDate())
+                        .total(order.getTotalPrice() == null ? 0 : order.getTotalPrice())
+                        .status(toDisplayStatus(order.getStatus()))
+                        .build())
+                .toList();
+    }
 
     public AnalyticsSummaryDto getSummary(String filter) {
         String normalizedFilter = normalizeFilter(filter);
