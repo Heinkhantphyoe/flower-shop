@@ -16,6 +16,9 @@ public class UpdateProductRequest {
     @Positive(message = "Price must be greater than 0")
     private double price;
 
+    @Positive(message = "Discount price must be greater than 0")
+    private Double discountPrice;
+
     @Positive(message = "Stock must be greater than 0")
     private double stock;
 

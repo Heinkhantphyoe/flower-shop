@@ -5,6 +5,7 @@ import com.hkp.flowershop.dto.requests.CreateOrderRequest;
 import com.hkp.flowershop.enums.OrderStatus;
 import com.hkp.flowershop.exceptions.BadRequestException;
 import com.hkp.flowershop.exceptions.ResourceNotFoundException;
+import com.hkp.flowershop.model.Coupon;
 import com.hkp.flowershop.model.Order;
 import com.hkp.flowershop.model.OrderItem;
 import com.hkp.flowershop.model.Product;
@@ -41,6 +42,8 @@ public class OrderService {
 
     private final FileStorageService fileStorageService;
 
+    private final CouponService couponService;
+
     public Page<Order> getAllOrder(Pageable pageable, Integer orderStatus) {
         if (orderStatus == null) {
             return orderRepo.findAll(pageable);
@@ -73,7 +76,7 @@ public class OrderService {
         order.setZipCode(request.getZipCode());
 
         List<OrderItem> items = new ArrayList<>();
-        double total = 0;
+        double subtotal = 0;
 
         for (OrderItemsDto itemDto : request.getOrderItems()) {
             Product product = productRepo.findById(itemDto.getProductId())
@@ -83,15 +86,25 @@ public class OrderService {
             item.setOrder(order);
             item.setProduct(product);
             item.setQuantity(itemDto.getQuantity());
-            item.setPrice(product.getPrice() * itemDto.getQuantity());
+            // Use sale price when set; never trust client-sent prices
+            item.setPrice(product.getEffectivePrice() * itemDto.getQuantity());
 
-            total += item.getPrice();
+            subtotal += item.getPrice();
             items.add(item);
+        }
+
+        double discountAmount = 0;
+        if (request.getCouponCode() != null && !request.getCouponCode().isBlank()) {
+            Coupon coupon = couponService.validateForOrder(request.getCouponCode(), subtotal);
+            discountAmount = couponService.calculateDiscount(coupon, subtotal);
+            order.setCouponCode(coupon.getCode());
+            order.setDiscountAmount(discountAmount);
+            couponService.markUsed(coupon);
         }
 
         order.setItems(items);
         int shippingFees = 5;
-        order.setTotalPrice(total + shippingFees);
+        order.setTotalPrice(subtotal - discountAmount + shippingFees);
 
         return orderRepo.save(order);
     }

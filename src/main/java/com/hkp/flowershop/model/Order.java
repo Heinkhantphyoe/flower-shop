@@ -47,4 +47,9 @@ public class Order {
 
     private double totalPrice;
 
+    private String couponCode;
+
+    // Fixed amount actually taken off by the coupon
+    private Double discountAmount;
+
 }

@@ -26,6 +26,7 @@ public class ProductMapper {
         product.setName(request.getName());
         product.setDescription(request.getDescription());
         product.setPrice(request.getPrice());
+        product.setDiscountPrice(request.getDiscountPrice());
         product.setStock(request.getStock());
         product.setCategory(category);
         return product;

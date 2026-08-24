@@ -28,6 +28,9 @@ public class Product {
     @Column(nullable = false)
     private Double price;
 
+    // Optional sale price; when set (and lower than price) this is the price customers pay
+    private Double discountPrice;
+
     private String imageUrl;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -46,5 +49,9 @@ public class Product {
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
+    public double getEffectivePrice() {
+        return (discountPrice != null && discountPrice < price) ? discountPrice : price;
+    }
 
 }

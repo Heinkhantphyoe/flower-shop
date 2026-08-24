@@ -32,5 +32,8 @@ public class CreateOrderRequest {
 
     private String deliveryNotes;
 
+    // Optional coupon code; validated server-side before the total is computed
+    private String couponCode;
+
 }
 

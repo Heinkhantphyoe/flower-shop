@@ -19,4 +19,6 @@ public class OrderDto {
     private List<OrderItemsDto> items;
     private String orderAddress;
     private double totalPrice;
+    private String couponCode;
+    private Double discountAmount;
 }

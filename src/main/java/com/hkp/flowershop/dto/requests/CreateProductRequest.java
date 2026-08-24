@@ -20,6 +20,9 @@ public class CreateProductRequest {
     @Positive(message = "Price must be greater than 0")
     private double price;
 
+    @Positive(message = "Discount price must be greater than 0")
+    private Double discountPrice;
+
     @NotNull(message = "Stock is required")
     @Positive(message = "Stock must be greater than 0")
     private double stock;

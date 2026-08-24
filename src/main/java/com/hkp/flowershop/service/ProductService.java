@@ -89,6 +89,7 @@ public class ProductService {
         product.setName(request.getName());
         product.setDescription(request.getDescription());
         product.setPrice(request.getPrice());
+        product.setDiscountPrice(request.getDiscountPrice());
         product.setStock(request.getStock());
 
         Category category = categoryRepo.findById(request.getCategoryId())
