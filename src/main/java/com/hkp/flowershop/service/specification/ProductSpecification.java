@@ -10,8 +10,8 @@ public class ProductSpecification {
     public static Specification<Product> filterBy(
             String name,
             Integer categoryId,
-            Integer minPrice,
-            Integer maxPrice,
+            Double minPrice,
+            Double maxPrice,
             Integer stockFilterId,
             double lowStockThreshold
     ) {

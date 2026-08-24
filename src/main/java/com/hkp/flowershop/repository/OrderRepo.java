@@ -79,6 +79,10 @@ public interface OrderRepo extends JpaRepository<Order, Long> {
 			Pageable pageable
 	);
 
+	Page<Order> findByUserId(Long userId, Pageable pageable);
+
+	Page<Order> findByUserIdAndStatus(Long userId, OrderStatus status, Pageable pageable);
+
 	interface BestSellingProductProjection {
 		Long getProductId();
 		String getProductName();

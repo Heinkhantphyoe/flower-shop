@@ -73,6 +73,42 @@ public class OrderController {
     }
 
 
+    @GetMapping("/my")
+    public ResponseEntity<?> getMyOrders(PaginationRequest paginationRequest,
+                                         @RequestParam(required = false) Integer orderStatus,
+                                         Principal principal) {
+        try {
+            Pageable pageable = paginationRequest.toPageable();
+            Page<Order> pageOrders = orderService.getOrdersForUser(principal.getName(), pageable, orderStatus);
+
+            List<OrderDto> orderDtos = pageOrders.stream()
+                    .map(orderMapper::toDto)
+                    .toList();
+
+            PaginationResponse<OrderDto> response = new PaginationResponse<>(orderDtos, pageOrders);
+            return ResponseUtil.success(response);
+        } catch (BadRequestException e) {
+            return ResponseUtil.badRequest(e.getMessage());
+        } catch (Exception e) {
+            return ResponseUtil.internalError("Internal Server Error");
+        }
+    }
+
+    @PutMapping("/{id}/cancel")
+    public ResponseEntity<?> cancelOrder(@PathVariable Long id, Principal principal) {
+        try {
+            Order cancelledOrder = orderService.cancelOrder(id, principal.getName());
+            OrderDto orderDto = orderMapper.toDto(cancelledOrder);
+            return ResponseUtil.success(orderDto, "Order cancelled successfully");
+        } catch (ResourceNotFoundException e) {
+            return ResponseUtil.notFound(e.getMessage());
+        } catch (BadRequestException e) {
+            return ResponseUtil.badRequest(e.getMessage());
+        } catch (Exception e) {
+            return ResponseUtil.internalError("Internal Server Error");
+        }
+    }
+
     @PutMapping("/{id}/status")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> updateOrderStatus(@PathVariable Long id,

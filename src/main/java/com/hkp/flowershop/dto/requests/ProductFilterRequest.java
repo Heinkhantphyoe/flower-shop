@@ -8,8 +8,8 @@ import lombok.Data;
 public class ProductFilterRequest {
     private String name;
     private Integer categoryId;
-    private Integer minPrice;
-    private Integer maxPrice;
+    private Double minPrice;
+    private Double maxPrice;
     private Integer stockFilterId; // null=AllStock, 1=InStock, 2=LowStock, 3=OutOfStock
 
 }

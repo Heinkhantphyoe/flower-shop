@@ -18,6 +18,10 @@ public class OrderDto {
     private OrderStatus status;
     private List<OrderItemsDto> items;
     private String orderAddress;
+    private String city;
+    private Integer zipCode;
+    private String paymentSs;
+    private LocalDateTime deliveryDate;
     private double totalPrice;
     private String couponCode;
     private Double discountAmount;

@@ -77,10 +77,25 @@ public class OrderService {
 
         List<OrderItem> items = new ArrayList<>();
         double subtotal = 0;
+        List<Product> changedProducts = new ArrayList<>();
 
         for (OrderItemsDto itemDto : request.getOrderItems()) {
             Product product = productRepo.findById(itemDto.getProductId())
                     .orElseThrow(() -> new BadRequestException("Product not found"));
+
+            if (itemDto.getQuantity() == null || itemDto.getQuantity() <= 0) {
+                throw new BadRequestException("Invalid quantity for product: " + product.getName());
+            }
+            // Oversell guard
+            if (product.getStock() < itemDto.getQuantity()) {
+                throw new BadRequestException(
+                        "Insufficient stock for " + product.getName()
+                                + ". Only " + (int) product.getStock() + " left");
+            }
+
+            // Decrement stock atomically within the transaction
+            product.setStock(product.getStock() - itemDto.getQuantity());
+            changedProducts.add(product);
 
             OrderItem item = new OrderItem();
             item.setOrder(order);
@@ -92,6 +107,7 @@ public class OrderService {
             subtotal += item.getPrice();
             items.add(item);
         }
+        productRepo.saveAll(changedProducts);
 
         double discountAmount = 0;
         if (request.getCouponCode() != null && !request.getCouponCode().isBlank()) {
@@ -109,6 +125,55 @@ public class OrderService {
         return orderRepo.save(order);
     }
 
+    public Page<Order> getOrdersForUser(String userEmail, Pageable pageable, Integer orderStatus) {
+        User user = userRepo.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (orderStatus == null) {
+            return orderRepo.findByUserId(user.getId(), pageable);
+        }
+
+        try {
+            OrderStatus status = OrderStatus.fromCode(orderStatus);
+            return orderRepo.findByUserIdAndStatus(user.getId(), status, pageable);
+        } catch (IllegalArgumentException ex) {
+            throw new BadRequestException("Invalid orderStatus. Use: 0=PENDING, 1=CONFIRMED, 2=DELIVERED, 3=CANCELLED");
+        }
+    }
+
+    @Transactional
+    public Order cancelOrder(Long orderId, String userEmail) {
+        User user = userRepo.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        Order order = orderRepo.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+
+        // Hide orders belonging to other users
+        if (!order.getUser().getId().equals(user.getId())) {
+            throw new ResourceNotFoundException("Order not found with id: " + orderId);
+        }
+
+        if (order.getStatus() != OrderStatus.PENDING) {
+            throw new BadRequestException("Only pending orders can be cancelled");
+        }
+
+        order.setStatus(OrderStatus.CANCELLED);
+        restockOrder(order);
+        return orderRepo.save(order);
+    }
+
+    // Returns ordered items to inventory; only call on a transition to CANCELLED
+    private void restockOrder(Order order) {
+        List<Product> changedProducts = new ArrayList<>();
+        for (OrderItem item : order.getItems()) {
+            Product product = item.getProduct();
+            product.setStock(product.getStock() + item.getQuantity());
+            changedProducts.add(product);
+        }
+        productRepo.saveAll(changedProducts);
+    }
+
     @Transactional
     public Order updateOrderStatus(Long orderId, Integer orderStatusCode) {
         if (orderStatusCode == null) {
@@ -117,6 +182,8 @@ public class OrderService {
 
         Order order = orderRepo.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+
+        OrderStatus previousStatus = order.getStatus();
 
         OrderStatus status;
         try {
@@ -132,6 +199,10 @@ public class OrderService {
             }
         } else {
             order.setDeliveryDate(null);
+        }
+
+        if (status == OrderStatus.CANCELLED && previousStatus != OrderStatus.CANCELLED) {
+            restockOrder(order);
         }
 
         return orderRepo.save(order);
