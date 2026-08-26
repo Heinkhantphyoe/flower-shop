@@ -11,9 +11,6 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-# Maven wrapper jar (we copy this separately in Dockerfile)
-.mvn/wrapper/maven-wrapper.jar
-
 # IDE files - not needed in container
 ### STS ###
 .apt_generated

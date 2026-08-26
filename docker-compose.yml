@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:17.5
@@ -30,8 +28,12 @@ services:
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      UPLOAD_DIR: /app/uploads
     depends_on:
       - db
+    volumes:
+      # Shared with the frontend nginx container so uploaded product images are served live
+      - ../flower-shop-frontend/public/uploads:/app/uploads
     networks:
       - flower-network
 
