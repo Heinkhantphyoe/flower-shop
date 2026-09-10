@@ -70,8 +70,10 @@ public class FileStorageService {
     }
 
     public void deleteImageFile(String imageUrl) {
+        if (imageUrl == null || imageUrl.isBlank() || imageUrl.startsWith("http")) {
+            return;
+        }
         try {
-            // Only get the filename from the full image URL (e.g., /images/abc.jpg)
             String fileName = Paths.get(imageUrl).getFileName().toString();
             Path filePath = uploadPath.resolve(fileName);
 

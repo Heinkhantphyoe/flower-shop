@@ -4,6 +4,7 @@ import com.hkp.flowershop.dto.requests.OtpVerificationRequest;
 import com.hkp.flowershop.dto.requests.RegisterRequest;
 import com.hkp.flowershop.dto.requests.ResendOtpRequest;
 import com.hkp.flowershop.dto.response.LoginResponse;
+import com.hkp.flowershop.enums.AuthProvider;
 import com.hkp.flowershop.enums.Role;
 import com.hkp.flowershop.enums.UserStatus;
 import com.hkp.flowershop.model.User;
@@ -69,6 +70,10 @@ public class AuthService {
         if (optionalUser.isPresent()) {
             User existingUser = optionalUser.get();
 
+            if (AuthProvider.GOOGLE.equals(existingUser.getProvider())) {
+                throw new BadCredentialsException("This email is already registered with Google. Please sign in with Google.");
+            }
+
             if (existingUser.getStatus() == UserStatus.VERIFIED) {
                 throw new BadCredentialsException("Email already in use.");
             }
@@ -92,6 +97,7 @@ public class AuthService {
         newUser.setPassword(encoder.encode(request.getPassword()));// encrypt password
         newUser.setName(request.getName());
         newUser.setRole(Role.ROLE_USER);
+        newUser.setProvider(AuthProvider.LOCAL);
         newUser.setStatus(UserStatus.NOT_VERIFIED);
         newUser.setAddress(request.getAddress());
         newUser.setPhoneNumber(request.getPhoneNumber());
@@ -109,6 +115,10 @@ public class AuthService {
     public LoginResponse verify(String email, String password) {
         User user = userRepo.findByEmail(email)
                 .orElseThrow(() -> new BadCredentialsException("No such email. Please register first."));
+
+        if (AuthProvider.GOOGLE.equals(user.getProvider())) {
+            throw new BadCredentialsException("This account uses Google Sign-In. Please sign in with Google.");
+        }
 
         if (user.getStatus() == UserStatus.NOT_VERIFIED) {
             throw new BadCredentialsException("Email not verified. Please complete OTP verification.");
@@ -203,6 +213,9 @@ public class AuthService {
         }
 
         User user = optionalUser.get();
+        if (AuthProvider.GOOGLE.equals(user.getProvider())) {
+            throw new BadCredentialsException("This account uses Google Sign-In. Password reset is not available.");
+        }
         String token = UUID.randomUUID().toString();
         user.setResetToken(token);
         user.setResetTokenExpiry(LocalDateTime.now().plusMinutes(resetTokenExpiryMinutes));

@@ -1,5 +1,6 @@
 package com.hkp.flowershop.model;
 
+import com.hkp.flowershop.enums.AuthProvider;
 import com.hkp.flowershop.enums.Role;
 import com.hkp.flowershop.enums.UserStatus;
 import jakarta.persistence.*;
@@ -26,6 +27,11 @@ public class User {
 
     private String password;
 
+
+    @Enumerated(EnumType.STRING)
+    private AuthProvider provider;
+
+    private String googleId;
 
     private String phoneNumber;
 

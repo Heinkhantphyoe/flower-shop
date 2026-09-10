@@ -1,5 +1,6 @@
 package com.hkp.flowershop.config;
 
+import com.hkp.flowershop.enums.AuthProvider;
 import com.hkp.flowershop.enums.Role;
 import com.hkp.flowershop.model.User;
 import com.hkp.flowershop.repository.UserRepo;
@@ -34,6 +35,7 @@ public class AdminInitializer implements CommandLineRunner {
             admin.setEmail(adminEmail);
             admin.setPassword(encoder.encode(adminPassword));
             admin.setRole(Role.ROLE_ADMIN);
+            admin.setProvider(AuthProvider.LOCAL);
             userRepo.save(admin);
             log.info("Admin created");
         }

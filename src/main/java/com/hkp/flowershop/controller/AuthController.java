@@ -7,6 +7,7 @@ import com.hkp.flowershop.model.User;
 import com.hkp.flowershop.model.UserPrinciple;
 import com.hkp.flowershop.service.AuthService;
 import com.hkp.flowershop.service.EmailService;
+import com.hkp.flowershop.service.GoogleAuthService;
 import com.hkp.flowershop.service.RefreshTokenService;
 import com.hkp.flowershop.service.UserService;
 import com.hkp.flowershop.service.util.ResponseUtil;
@@ -44,6 +45,9 @@ public class AuthController {
 
     @Autowired
     private RefreshTokenService refreshTokenService;
+
+    @Autowired
+    private GoogleAuthService googleAuthService;
 
 
     /**
@@ -155,10 +159,20 @@ public class AuthController {
 
     }
 
-    /**
-     * Refresh Token
-     * POST /auth/refresh
-     */
+    @PostMapping("/google")
+    public ResponseEntity<?> googleLogin(@Valid @RequestBody GoogleLoginRequest request) {
+        try {
+            LoginResponse response = googleAuthService.loginWithGoogle(request.getToken());
+            return ResponseUtil.success(response, "Google login successful");
+        } catch (BadCredentialsException e) {
+            return ResponseUtil.badRequest(e.getMessage());
+        } catch (Exception e) {
+            log.error("Google login failed", e);
+            return ResponseUtil.internalError("Internal Server Error");
+        }
+    }
+
+
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
         try {
