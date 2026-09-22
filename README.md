@@ -390,7 +390,7 @@ Verify production builds compile cleanly:
 
 ## Related Projects
 
-This API is consumed by the [FlowerShop Frontend](../flower-shop-frontend/) React SPA. Run both together for full-stack local development:
+This API is consumed by the [FlowerShop Frontend](https://github.com/Heinkhantphyoe/flower-shop-react) React SPA. Run both together for full-stack local development:
 
 1. Start Redis, PostgreSQL, and this backend (`:8080/api`)
 2. Start the frontend dev server (`:5173`)
